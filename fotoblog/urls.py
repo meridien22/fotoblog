@@ -17,7 +17,40 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path
+from django.contrib.auth.views import LoginView, LogoutView, PasswordChangeView, PasswordChangeDoneView
+from django.conf import settings
+from django.conf.urls.static import static
+
+import authentication.views
+import blog.views
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path('', LoginView.as_view(
+            template_name='authentication/login.html',
+            redirect_authenticated_user=True),
+        name='login'),
+    path('logout/', LogoutView.as_view(), name='logout'),
+    path('change_password/', PasswordChangeView.as_view(
+        template_name='authentication/password_change_form.html'),
+        name='password_change'
+    ),
+    path('change-password-done/', PasswordChangeDoneView.as_view(
+        template_name='authentication/password_change_done.html'),
+        name='password_change_done'
+    ),
+    # path('logout/', authentication.views.logout_user, name='logout'),
+    path("home/", blog.views.home, name="home"),
+    path('signup/', authentication.views.signup_page, name='signup'),
+    path('photo/upload/', blog.views.photo_upload, name='photo_upload'),
+    path('profile_photo/upload/', authentication.views.upload_profile_photo, name='upload_profile_photo'),
+    path('blog/create', blog.views.blog_and_photo_upload, name='blog_create'),
+    path('blog/<int:blog_id>', blog.views.view_blog, name='view_blog'),
+    path('blog/<int:blog_id>/edit', blog.views.edit_blog, name='edit_blog'),
+    path('photo/upload-multiple/', blog.views.create_multiple_photos, name='create_multiple_photos'),
+    path('follow-users/', blog.views.follow_users, name='follow_users')
 ]
+
+# permet aux images stockées dans le répertoire MEDIA_ROOT d'être servies au chemin donné par MEDIA_URL
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
