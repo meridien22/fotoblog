@@ -27,3 +27,4 @@ class User(AbstractUser):
         elif self.role == self.SUBSCRIBER:
             group = Group.objects.get(name='subscribers')
             group.user_set.add(self)
+
