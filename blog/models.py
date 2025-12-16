@@ -28,10 +28,10 @@ class Blog(models.Model):
     photo = models.ForeignKey(Photo, null=True, on_delete=models.SET_NULL, blank=True)
     title = models.CharField(max_length=128)
     content = models.CharField(max_length=5000)
-    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     date_created = models.DateTimeField(auto_now_add=True)
     starred = models.BooleanField(default=False)
     word_count = models.IntegerField(null=True)
+    contributors = models.ManyToManyField(settings.AUTH_USER_MODEL, through='BlogContributor', related_name='contributions')
 
     def _get_word_count(self):
         self.word_count = len(self.content.split(" "))
@@ -44,3 +44,11 @@ class Blog(models.Model):
         permissions = [
             ('change_blog_title', "Peut changer le titre d'un billet de blog")
         ]
+
+class BlogContributor(models.Model):
+    contributor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    blog = models.ForeignKey(Blog, on_delete=models.CASCADE)
+    contribution = models.CharField(max_length=255, blank=True)
+    
+    class Meta:
+        unique_together = ('contributor', 'blog')
