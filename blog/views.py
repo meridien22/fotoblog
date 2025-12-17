@@ -1,16 +1,33 @@
+from itertools import chain
 from django.contrib.auth.decorators import login_required, permission_required
 from django.shortcuts import render, redirect
 from django.shortcuts import get_object_or_404
 from django.forms import formset_factory
+from django.db.models import Q
+from django.core.paginator import Paginator
 
 from . import forms
 from . import models
 
 @login_required
 def home(request):
-    photos = models.Photo.objects.all()
-    blogs = models.Blog.objects.all()
-    return render(request, 'blog/home.html', context={'photos': photos, 'blogs': blogs})
+    blogs = models.Blog.objects.filter(
+        Q(contributors__in=request.user.follows.all()) | Q(starred=True))
+    photos = models.Photo.objects.filter(
+        uploader__in=request.user.follows.all()
+        ).exclude(blog__in=blogs)
+    blogs_and_photos = sorted(
+        chain(blogs, photos),
+        key=lambda instance: instance.date_created,
+        reverse=True
+    )
+
+    paginator = Paginator(blogs_and_photos, 6)
+
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {'page_obj': page_obj}
+    return render(request, 'blog/home.html', context=context)
 
 @login_required
 @permission_required("blog.add_photo", raise_exception=True)
@@ -104,3 +121,15 @@ def follow_users(request):
             form.save()
             return redirect('home')
     return render(request, 'blog/follow_users_form.html', context={'form': form})
+
+def photo_feed(request):
+    photos = models.Photo.objects.filter(
+        uploader__in=request.user.follows.all()
+    ).order_by('-date_created')
+
+    paginator = Paginator(photos, 3)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {'page_obj': page_obj}
+
+    return render(request, 'blog/photo_feed.html', context=context)

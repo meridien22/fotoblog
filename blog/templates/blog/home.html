@@ -1,20 +1,16 @@
 {% extends 'base.html' %}
+{% load blog_extras %}
+
 {% block content %}
-    <p>Vous êtes connecté ! ({{ user.username }})</p>
-    <h2>Photos</h2>
-    {% for photo in photos %}
-        <img src="{{ photo.image.url }}">
-        <p>{{ photo.caption }}</p>
-    {% endfor %}
-    <h2>Blog</h2>
+    <h2>Votre flux</h2>
     <div class="grid-container">
-        {% for blog in blogs %}
-            <div class="post">
-                <a href="{% url 'view_blog' blog.id %}">
-                    <h4>Billet : {{ blog.title }} (Nombre de mot : {{ blog.word_count }})</h4>
-                    <img src="{{ blog.photo.image.url }}">
-                </a>
-            </div>
+        {% for instance in page_obj  %}
+            {% if instance|model_type == 'Blog' %}
+                {% include 'blog/partials/blog_snippet.html' with blog=instance %}
+            {% elif instance|model_type == 'Photo' %}
+                {% include 'blog/partials/photo_snippet.html' with photo=instance %}
+            {% endif %}
         {% endfor %}
     </div>
+    {% include 'blog/partials/foot_paginator.html' with page_obj=page_obj %}
 {% endblock content %}
